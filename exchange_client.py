@@ -23,7 +23,7 @@ class ExchangeClient:
     def __init__(self) -> None:
         self.dry_run = settings.DRY_RUN
         self.symbol = settings.SYMBOL
-        self._exchange: Optional[ccxt.Exchange] = None
+        self._exchange: Optional[Coinbase.com] = None
         self._market_info: Dict[str, Any] = {}
         self._sim_orders: Dict[str, Dict[str, Any]] = {}
         self._last_price: Decimal = Decimal("0")
