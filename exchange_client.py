@@ -19,6 +19,15 @@ class ExchangeClient:
     Authenticated async exchange connector with deterministic precision rounding,
     rate-limit backoff, and seamless dry-run simulation parity.
     """
+    try:
+    coinbase_client = RESTClient(
+        api_key=os.environ.get("COINBASE_API_KEY_NAME"),
+        api_secret=os.environ.get("COINBASE_API_KEY_SECRET"),
+    )
+    print("[SUCCESS] Live Exchange API authorized directly in app.py.")
+ except Exception as e:
+    print(f"[FATAL] Live Exchange API authorization failed: {e}")
+    coinbase_client = None
 
     def __init__(self) -> None:
         self.dry_run = settings.DRY_RUN
