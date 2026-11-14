@@ -21,8 +21,8 @@ class ExchangeClient:
     """
     try:
     coinbase_client = RESTClient(
-        api_key=os.environ.get("COINBASE_API_KEY_NAME"),
-        api_secret=os.environ.get("COINBASE_API_KEY_SECRET"),
+        api_key=os.environ.get(API_KEY"),
+        api_secret=os.environ.get("API_SECRET"),
     )
     print("[SUCCESS] Live Exchange API authorized directly in app.py.")
  except Exception as e:
