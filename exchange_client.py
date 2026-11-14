@@ -21,7 +21,7 @@ class ExchangeClient:
     """
     try:
     coinbase_client = RESTClient(
-        api_key=os.environ.get(API_KEY"),
+        api_key=os.environ.get("API_KEY"),
         api_secret=os.environ.get("API_SECRET"),
     )
     print("[SUCCESS] Live Exchange API authorized directly in app.py.")
@@ -32,7 +32,7 @@ class ExchangeClient:
     def __init__(self) -> None:
         self.dry_run = settings.DRY_RUN
         self.symbol = settings.SYMBOL
-        self._exchange: Optional[Coinbase.com] = None
+        self._exchange: Optional[Coinbase.com] 
         self._market_info: Dict[str, Any] = {}
         self._sim_orders: Dict[str, Dict[str, Any]] = {}
         self._last_price: Decimal = Decimal("0")
