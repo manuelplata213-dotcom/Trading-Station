@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AEGIS // Quantitative Execution Terminal</title>
+  <script src="https://tailwindcss.com"></script>
+  <script src="https://unpkg.com"></script>
+  <style>
+    body {
+      background: radial-gradient(circle at top right, #0f172a, #020617 70%);
+      color: #e2e8f0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .glass {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-6">
+
+  <!-- Owner Authentication Gate -->
+  <div id="authGate" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-xl">
+    <div class="glass w-full max-w-md rounded-2xl p-8">
+      <div class="mb-6">
+        <span class="text-xs uppercase tracking-widest text-emerald-400">Institutional Access Gate</span>
+        <h1 class="mt-1 text-2xl font-bold text-white">AEGIS QUANT TERMINAL</h1>
+      </div>
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">OPERATOR ID</label>
+          <input id="username" type="text" value="admin" required
+            class="w-full rounded-lg bg-slate-900/90 border border-slate-700 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">ACCESS KEY</label>
+          <input id="password" type="password" required
+            class="w-full rounded-lg bg-slate-900/90 border border-slate-700 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none" />
+        </div>
+        <p id="authError" class="hidden text-xs text-rose-400">Authentication rejected.</p>
+        <button type="submit"
+          class="w-full rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2.5 text-sm transition">
+          AUTHENTICATE SESSION
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Command Center -->
+  <div id="dashboard" class="hidden max-w-7xl mx-auto space-y-5">
+    <!-- Top Bar -->
+    <header class="glass rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="stateBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-300">IDLE</span>
+            <span id="modeBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300">DRY RUN</span>
+          </div>
+          <h1 class="text-lg font-bold text-white mt-1"><span id="symbolTitle">BTC/USDC</span> // EXECUTION CORE</h1>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2.5">
+        <button onclick="sendCommand('/api/control/start')"
+          class="px-4 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold transition">
+          ▶ START ENGINE
+        </button>
+        <button onclick="sendCommand('/api/control/pause')"
+          class="px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 text-xs font-bold transition">
+          ❚❚ PAUSE
+        </button>
+        <button onclick="triggerKillSwitch()"
+          class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-950/50 transition">
+          ⚠ KILL SWITCH
+        </button>
+      </div>
+    </header>
+
+    <!-- KPI Strip -->
+    <section class="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div class="glass rounded-xl p-4">
+        <div class="text-xs text-slate-400">SPOT PRICE</div>
+        <div id="kpiPrice" class="text-xl font-bold text-white mt-1">$0.00</div>
+      </div>
+      <div class="glass rounded-xl p-4">
+        <div class="text-xs text-slate-400">REALIZED PNL</div>
+        <div id="kpiRealized" class="text-xl font-bold text-emerald-400 mt-1">$0.00</div>
+      </div>
+      <div class="glass rounded-xl p-4">
+        <div class="text-xs text-slate-400">UNREALIZED PNL</div>
+        <div id="kpiUnrealized" class="text-xl font-bold text-slate-200 mt-1">$0.00</div>
+      </div>
+      <div class="glass rounded-xl p-4">
+        <div class="text-xs text-slate-400">WIN RATE / CYCLES</div>
+        <div id="kpiWinRate" class="text-xl font-bold text-sky-400 mt-1">0.0% (0)</div>
+      </div>
+      <div class="glass rounded-xl p-4 col-span-2 md:col-span-1">
+        <div class="text-xs text-slate-400">EFFICIENCY RATIO</div>
+        <div id="kpiER" class="text-xl font-bold text-purple-400 mt-1">0.00</div>
+      </div>
+    </section>
+
+    <!-- Evaluation Banner -->
+    <div class="glass rounded-xl px-4 py-3 flex items-center justify-between text-xs">
+      <span class="text-slate-400">STRATEGY TELEMETRY: <strong id="evalReason" class="text-slate-100 ml-1">Connecting...</strong></span>
+      <span class="text-slate-400">FEE HURDLE: <strong id="feeHurdle" class="text-emerald-400 ml-1">$0.00</strong></span>
+    </div>
+
+    <!-- Main Grid: Chart + Order Book & Position -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div class="glass rounded-2xl p-4 lg:col-span-2">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Live Cumulative PnL Curve ($)</h2>
+          <span class="text-xs text-slate-500">1s SSE Stream</span>
+        </div>
+        <div id="pnlChart" class="w-full h-72"></div>
+      </div>
+
+      <div class="space-y-5">
+        <!-- Active Position Card -->
+        <div class="glass rounded-2xl p-4">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Active Position State</h2>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between"><span class="text-slate-400">Position Size:</span><span id="posQty" class="text-white font-bold">0.000000</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Avg Entry:</span><span id="posEntry" class="text-white">$0.00</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Min Profit Exit:</span><span id="posTarget" class="text-emerald-400">$0.00</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">ATR Trailing Stop:</span><span id="posTrail" class="text-amber-400">$0.00</span></div>
+          </div>
+        </div>
+
+        <!-- Order Book Depth -->
+        <div class="glass rounded-2xl p-4">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">L2 Order Book Depth</h2>
+          <div id="asksBox" class="space-y-1 text-xs text-rose-400 mb-2"></div>
+          <div class="border-t border-slate-800 my-2"></div>
+          <div id="bidsBox" class="space-y-1 text-xs text-emerald-400"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Execution Ledger -->
+    <section class="glass rounded-2xl p-4">
+      <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Immutable Execution Audit Ledger</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="text-slate-400 border-b border-slate-800">
+            <tr>
+              <th class="py-2">TIME</th>
+              <th>SIDE</th>
+              <th>QUANTITY</th>
+              <th>FILL PRICE</th>
+              <th>NET PNL ($)</th>
+              <th>ORDER ID</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerBody" class="divide-y divide-slate-800/60"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  <script>
+    let authToken = sessionStorage.getItem("quant_token") || "";
+    let chart, pnlSeries;
+
+    function initChart() {
+      const container = document.getElementById("pnlChart");
+      chart = LightweightCharts.createChart(container, {
+        layout: { background: { color: "transparent" }, textColor: "#94a3b8" },
+        grid: { vertLines: { color: "rgba(148,163,184,0.08)" }, horzLines: { color: "rgba(148,163,184,0.08)" } },
+        timeScale: { timeVisible: true, secondsVisible: true },
+      });
+      pnlSeries = chart.addAreaSeries({
+        lineColor: "#10b981",
+        topColor: "rgba(16, 185, 129, 0.35)",
+        bottomColor: "rgba(16, 185, 129, 0.0)",
+        lineWidth: 2,
+      });
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!res.ok) {
+        document.getElementById("authError").classList.remove("hidden");
+        return;
+      }
+      const data = await res.json();
+      authToken = data.token;
+      sessionStorage.setItem("quant_token", authToken);
+      bootTerminal();
+    });
+
+    function bootTerminal() {
+      document.getElementById("authGate").classList.add("hidden");
+      document.getElementById("dashboard").classList.remove("hidden");
+      if (!chart) initChart();
+
+      const evtSource = new EventSource(`/api/telemetry/stream?token=${encodeURIComponent(authToken)}`);
+      evtSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        renderTelemetry(data);
+      };
+    }
+
+    function renderTelemetry(d) {
+      document.getElementById("symbolTitle").textContent = d.symbol;
+      document.getElementById("stateBadge").textContent = d.state;
+      document.getElementById("modeBadge").textContent = d.dry_run ? "DRY RUN SIMULATION" : "LIVE CAPITAL";
+      document.getElementById("modeBadge").className = d.dry_run
+        ? "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300"
+        : "px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400";
+
+      document.getElementById("kpiPrice").textContent = `$${d.last_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+      document.getElementById("kpiRealized").textContent = `$${d.metrics.realized_pnl.toFixed(4)}`;
+      document.getElementById("kpiUnrealized").textContent = `$${d.position.unrealized_pnl.toFixed(4)}`;
+      document.getElementById("kpiWinRate").textContent = `${d.metrics.win_rate}% (${d.metrics.total_trades})`;
+      document.getElementById("kpiER").textContent = d.metrics.efficiency_ratio.toFixed(2);
+
+      document.getElementById("evalReason").textContent = d.last_reason;
+      document.getElementById("feeHurdle").textContent = `$${d.metrics.fee_hurdle_price.toFixed(2)}`;
+
+      document.getElementById("posQty").textContent = d.position.qty.toFixed(6);
+      document.getElementById("posEntry").textContent = `$${d.position.avg_entry.toFixed(2)}`;
+      document.getElementById("posTarget").textContent = `$${d.position.target_exit.toFixed(2)}`;
+      document.getElementById("posTrail").textContent = `$${d.position.trailing_stop.toFixed(2)}`;
+
+      if (d.pnl_curve && d.pnl_curve.length > 0 && pnlSeries) {
+        const unique = [];
+        let lastT = 0;
+        for (const pt of d.pnl_curve) {
+          if (pt.time > lastT) {
+            unique.push({ time: pt.time, value: pt.value });
+            lastT = pt.time;
+          }
+        }
+        pnlSeries.setData(unique);
+      }
+
+      const asksHtml = (d.order_book.asks || []).slice().reverse().map(
+        ([p, q]) => `<div class="flex justify-between"><span>$${p.toFixed(2)}</span><span>${q.toFixed(4)}</span></div>`
+      ).join("");
+      const bidsHtml = (d.order_book.bids || []).map(
+        ([p, q]) => `<div class="flex justify-between"><span>$${p.toFixed(2)}</span><span>${q.toFixed(4)}</span></div>`
+      ).join("");
+      document.getElementById("asksBox").innerHTML = asksHtml;
+      document.getElementById("bidsBox").innerHTML = bidsHtml;
+
+      const rows = (d.recent_trades || []).map(t => `
+        <tr>
+          <td class="py-2 text-slate-400">${new Date(t.timestamp * 1000).toLocaleTimeString()}</td>
+          <td class="font-bold ${t.side === 'BUY' ? 'text-sky-400' : 'text-emerald-400'}">${t.side}</td>
+          <td>${t.qty.toFixed(6)}</td>
+          <td>$${t.price.toFixed(2)}</td>
+          <td class="${t.pnl_usd >= 0 ? 'text-emerald-400' : 'text-rose-400'}">$${t.pnl_usd.toFixed(4)}</td>
+          <td class="text-slate-500">${t.order_id}</td>
+        </tr>
+      `).join("");
+      document.getElementById("ledgerBody").innerHTML = rows;
+    }
+
+    async function sendCommand(endpoint) {
+      await fetch(endpoint, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+    }
+
+    async function triggerKillSwitch() {
+      if (confirm("CONFIRM EMERGENCY KILL SWITCH: Cancel all open orders and flatten position immediately?")) {
+        await sendCommand("/api/control/kill");
+      }
+    }
+
+    if (authToken) bootTerminal();
+  </script>
+</body>
+</html>
