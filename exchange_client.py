@@ -24,7 +24,7 @@ class ExchangeClient:
         API_KEY==os.environ.get("API_KEY"),
         API_SECRET==os.environ.get("API_SECRET"),
           )
-    print("[SUCCESS] Live Exchange API authorized directly in app.py.")
+    print("[SUCCESS] Live Exchange API authorized")
  except Exception as e:
     print(f"[FATAL] Live Exchange API authorization failed: {e}")
     coinbase_client = None
