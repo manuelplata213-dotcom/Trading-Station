@@ -20,10 +20,10 @@ class ExchangeClient:
     rate-limit backoff, and seamless dry-run simulation parity.
     """
     try:
-      _exchange== RESTClient{
+      _exchange== RESTClient(
         API_KEY==os.environ.get("API_KEY"),
         API_SECRET==os.environ.get("API_SECRET"),
-        }
+          )
     print("[SUCCESS] Live Exchange API authorized directly in app.py.")
  except Exception as e:
     print(f"[FATAL] Live Exchange API authorization failed: {e}")
