@@ -20,10 +20,10 @@ class ExchangeClient:
     rate-limit backoff, and seamless dry-run simulation parity.
     """
     try:
-    coinbase_client = RESTClient(
+      _exchange = RESTClient{
         api_key=os.environ.get("API_KEY"),
         api_secret=os.environ.get("API_SECRET"),
-    )
+        }
     print("[SUCCESS] Live Exchange API authorized directly in app.py.")
  except Exception as e:
     print(f"[FATAL] Live Exchange API authorization failed: {e}")
